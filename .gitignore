@@ -1,0 +1,62 @@
+# ── OS ──────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+# ── IDE ─────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+nbproject/
+
+# ── Java / Maven ────────────────────────────────────────────────
+backend/target/
+backend/.mvn/repository/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# ── Spring Boot ─────────────────────────────────────────────────
+backend/src/main/resources/application-local.properties
+backend/src/main/resources/application-prod.properties
+
+# ── Node / React ────────────────────────────────────────────────
+frontend/node_modules/
+frontend/build/
+frontend/.pnp
+frontend/.pnp.js
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# ── Logs ────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Secrets / Env ───────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+secrets/
+
+# ── Misc ────────────────────────────────────────────────────────
+untitled
