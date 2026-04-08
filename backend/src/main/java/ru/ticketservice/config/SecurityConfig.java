@@ -19,6 +19,26 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.*;
 
+/**
+ * @brief Конфигурация Spring Security.
+ *
+ * Настраивает:
+ * <ul>
+ *   <li>Stateless-сессии (JWT вместо cookie-сессий)</li>
+ *   <li>Правила авторизации запросов</li>
+ *   <li>CORS (разрешённые origins из конфигурации)</li>
+ *   <li>JWT-фильтр аутентификации</li>
+ * </ul>
+ *
+ * Публичные эндпоинты (без токена):
+ * <ul>
+ *   <li>{@code POST /auth/**} — регистрация и вход</li>
+ *   <li>{@code GET /events}, {@code GET /events/**} — просмотр афиши</li>
+ *   <li>{@code GET /reviews/**} — чтение отзывов</li>
+ * </ul>
+ * Раздел {@code /admin/**} требует роли {@code ADMIN}.
+ * Все остальные запросы требуют аутентификации.
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -28,9 +48,17 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
 
+    /** @brief Список разрешённых CORS origins из конфигурации (через запятую). */
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
 
+    /**
+     * @brief Создаёт цепочку фильтров безопасности.
+     *
+     * @param http объект конфигурации HTTP безопасности
+     * @return настроенная {@link SecurityFilterChain}
+     * @throws Exception при ошибке конфигурации
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
@@ -49,11 +77,29 @@ public class SecurityConfig {
             .build();
     }
 
+    /**
+     * @brief Создаёт бин кодировщика паролей BCrypt.
+     *
+     * Используется Spring Security при сравнении паролей.
+     * В данном проекте пароли хранятся как SHA-256, поэтому бин
+     * зарегистрирован для совместимости с инфраструктурой, но
+     * хеширование выполняется вручную в {@link ru.ticketservice.service.AuthService}.
+     *
+     * @return {@link BCryptPasswordEncoder}
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * @brief Создаёт источник CORS-конфигурации.
+     *
+     * Разрешает все методы (GET, POST, PUT, DELETE, OPTIONS) и заголовки
+     * для origins, перечисленных в {@code app.cors.allowed-origins}.
+     *
+     * @return настроенный {@link CorsConfigurationSource}
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();

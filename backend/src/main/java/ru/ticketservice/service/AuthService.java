@@ -8,6 +8,12 @@ import ru.ticketservice.exception.*;
 import ru.ticketservice.repository.*;
 import ru.ticketservice.security.JwtService;
 
+/**
+ * @brief Сервис аутентификации и управления профилем.
+ *
+ * Обеспечивает регистрацию новых пользователей, вход по логину/паролю
+ * и обновление личных данных. Пароли хранятся в виде SHA-256 хешей.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -17,6 +23,11 @@ public class AuthService {
     private final RoleRepository roleRepo;
     private final JwtService jwtService;
 
+    /**
+     * @brief Вычисляет SHA-256 хеш строки.
+     * @param raw исходная строка (например, пароль пользователя)
+     * @return шестнадцатеричный SHA-256 хеш
+     */
     private String sha256(String raw) {
         try {
             var md = java.security.MessageDigest.getInstance("SHA-256");
@@ -27,6 +38,16 @@ public class AuthService {
         } catch (Exception e) { throw new RuntimeException(e); }
     }
 
+    /**
+     * @brief Регистрирует нового пользователя и возвращает JWT-токен.
+     *
+     * Проверяет уникальность email и логина перед созданием записи.
+     * Новому пользователю автоматически присваивается роль {@code USER}.
+     *
+     * @param req данные для регистрации
+     * @return {@link AuthResponse} с токеном и информацией о пользователе
+     * @throws ConflictException если email или логин уже зарегистрированы
+     */
     public AuthResponse register(RegisterRequest req) {
         if (userRepo.existsByEmail(req.getEmail()))
             throw new ConflictException("Email уже зарегистрирован");
@@ -50,6 +71,13 @@ public class AuthService {
         return new AuthResponse(user.getId(), token, user.getLogin(), user.getName(), role.getName());
     }
 
+    /**
+     * @brief Аутентифицирует пользователя по логину и паролю.
+     *
+     * @param req логин и пароль
+     * @return {@link AuthResponse} с JWT-токеном и данными пользователя
+     * @throws UnauthorizedException если логин не найден или пароль неверен
+     */
     public AuthResponse login(LoginRequest req) {
         User user = userRepo.findByLogin(req.getLogin())
             .orElseThrow(() -> new UnauthorizedException("Неверный логин или пароль"));
@@ -61,6 +89,15 @@ public class AuthService {
         return new AuthResponse(user.getId(), token, user.getLogin(), user.getName(), user.getRole().getName());
     }
 
+    /**
+     * @brief Обновляет личные данные пользователя.
+     *
+     * Обновляются только переданные (не null) поля: имя, фамилия, телефон, подписка.
+     *
+     * @param userId идентификатор пользователя
+     * @param req    новые данные профиля
+     * @return обновлённый объект {@link User}
+     */
     public User updateProfile(Integer userId, UpdateProfileRequest req) {
         User user = userRepo.findById(userId).orElseThrow();
         if (req.getName() != null) user.setName(req.getName());
@@ -70,6 +107,11 @@ public class AuthService {
         return userRepo.save(user);
     }
 
+    /**
+     * @brief Генерирует JWT-токен для пользователя.
+     * @param user объект пользователя
+     * @return подписанный JWT-токен
+     */
     private String generateToken(User user) {
         return jwtService.generateToken(
             org.springframework.security.core.userdetails.User.builder()

@@ -6,12 +6,26 @@ import org.springframework.stereotype.Service;
 import ru.ticketservice.entity.User;
 import ru.ticketservice.repository.UserRepository;
 
+/**
+ * @brief Реализация {@link UserDetailsService} для Spring Security.
+ *
+ * Загружает данные пользователя из базы данных по логину
+ * и конвертирует сущность {@link User} в объект {@link UserDetails},
+ * понятный Spring Security.
+ */
 @Service
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;
 
+    /**
+     * @brief Загружает пользователя по логину.
+     *
+     * @param username логин пользователя
+     * @return объект {@link UserDetails} с логином, хешем пароля и ролями
+     * @throws UsernameNotFoundException если пользователь с данным логином не найден
+     */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByLogin(username)

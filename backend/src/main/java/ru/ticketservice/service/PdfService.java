@@ -30,17 +30,47 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * @brief Сервис генерации PDF-билетов.
+ *
+ * Создаёт электронный билет в формате A5 (альбомная ориентация) с:
+ * <ul>
+ *   <li>шапкой в корпоративном стиле (золото + тёмно-фиолетовый)</li>
+ *   <li>деталями мероприятия и места</li>
+ *   <li>QR-кодом (изображение PNG, сгенерированное через ZXing)</li>
+ * </ul>
+ *
+ * Для корректного отображения кириллицы используется шрифт Arial Unicode.
+ */
 @Service
 @RequiredArgsConstructor
 public class PdfService {
 
     private final TicketRepository ticketRepo;
 
+    /** @brief Путь к файлу шрифта с поддержкой кириллицы (Arial Unicode). */
     private static final String FONT_PATH = "/Library/Fonts/Arial Unicode.ttf";
+
+    /** @brief Золотой цвет для акцентов (#D4AF37). */
     private static final DeviceRgb GOLD  = new DeviceRgb(212, 175, 55);
+
+    /** @brief Тёмно-фиолетовый цвет фона (#1A0A2E). */
     private static final DeviceRgb DARK  = new DeviceRgb(26, 10, 46);
+
+    /** @brief Светло-лавандовый цвет ячеек (#F5F0FF). */
     private static final DeviceRgb LIGHT = new DeviceRgb(245, 240, 255);
 
+    /**
+     * @brief Генерирует PDF-файл билета для указанного пользователя.
+     *
+     * Проверяет принадлежность билета пользователю перед генерацией.
+     *
+     * @param ticketId идентификатор билета
+     * @param userId   идентификатор запрашивающего пользователя
+     * @return байтовый массив PDF-документа
+     * @throws NotFoundException    если билет не найден или не принадлежит пользователю
+     * @throws RuntimeException     при ошибке генерации PDF или QR-кода
+     */
     public byte[] generateTicketPdf(Integer ticketId, Integer userId) {
         Ticket ticket = ticketRepo.findByIdAndUserId(ticketId, userId)
             .orElseThrow(() -> new NotFoundException("Билет не найден"));
@@ -120,6 +150,13 @@ public class PdfService {
         }
     }
 
+    /**
+     * @brief Добавляет ячейку с меткой и значением в таблицу деталей билета.
+     *
+     * @param table таблица, в которую добавляется ячейка
+     * @param label заголовок поля (серый мелкий текст)
+     * @param value значение поля (тёмный жирный текст)
+     */
     private void addInfoCell(Table table, String label, String value) {
         table.addCell(new Cell()
                 .add(new Paragraph(label).setFontSize(9).setFontColor(ColorConstants.GRAY))
@@ -128,6 +165,17 @@ public class PdfService {
                 .setBorder(new SolidBorder(GOLD, 1)));
     }
 
+    /**
+     * @brief Генерирует QR-код как PNG-изображение.
+     *
+     * Использует библиотеку ZXing (com.google.zxing) для кодирования строки
+     * в QR-код и преобразования BitMatrix в BufferedImage.
+     *
+     * @param content строка для кодирования (UUID билета)
+     * @param size    размер изображения в пикселях (ширина = высота)
+     * @return байтовый массив PNG-изображения
+     * @throws Exception при ошибке кодирования или записи изображения
+     */
     private byte[] generateQrPng(String content, int size) throws Exception {
         QRCodeWriter writer = new QRCodeWriter();
         BitMatrix matrix = writer.encode(content, BarcodeFormat.QR_CODE, size, size);
